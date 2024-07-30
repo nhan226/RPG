@@ -1,4 +1,5 @@
 #include "AuraAbilitySystemComponent.h"
+#include "Aura/AuraGameplayTags.h"
 
 void UAuraAbilitySystemComponent::AbilityActorInfoSet()
 {
