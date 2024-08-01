@@ -1,5 +1,6 @@
 #include "CharacterBase.h"
 #include "AbilitySystemComponent.h"
+#include "Aura/AbilitySystem/AuraAbilitySystemComponent.h"
 
 ACharacterBase::ACharacterBase()
 {
@@ -21,6 +22,12 @@ void ACharacterBase::InitAbilityActorInfo()
 {
 }
 
+FVector ACharacterBase::GetCombatSocketLocation()
+{
+	check(weapon);
+	return weapon->GetSocketLocation(WeaponTipSocketName);
+}
+
 UAbilitySystemComponent* ACharacterBase::GetAbilitySystemComponent() const
 {
 	return abilitySystemComponent;
@@ -34,4 +41,12 @@ void ACharacterBase::ApplyEffectToSelf(TSubclassOf<UGameplayEffect> GameplayEffe
 	ContextHandle.AddSourceObject(this);
 	const FGameplayEffectSpecHandle SpecHandle = GetAbilitySystemComponent()->MakeOutgoingSpec(GameplayEffectClass, Level, ContextHandle);
 	GetAbilitySystemComponent()->ApplyGameplayEffectSpecToTarget(*SpecHandle.Data.Get(), GetAbilitySystemComponent());
+}
+
+void ACharacterBase::AddCharacterAbilities()
+{
+	UAuraAbilitySystemComponent* AuraASC = CastChecked<UAuraAbilitySystemComponent>(abilitySystemComponent);
+	if (!HasAuthority()) return;
+
+	AuraASC->AddCharacterAbilities(StartupAbilities);
 }
