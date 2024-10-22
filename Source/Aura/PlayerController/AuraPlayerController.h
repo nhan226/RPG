@@ -10,6 +10,7 @@ class UInputAction;
 class UAuraInputConfig;
 class UAuraAbilitySystemComponent;
 class USplineComponent;
+class UDamageTextWidgetComponent;
 
 struct FInputActionValue;
 
@@ -23,6 +24,9 @@ class AURA_API AAuraPlayerController : public APlayerController
 public:
 	AAuraPlayerController();
 	virtual void PlayerTick(float DeltaTime) override;
+
+	UFUNCTION(Client, Reliable)
+	void ShowDamageNumber(float DamageAmount, ACharacter* TargetCharacter, bool bBlockedHit, bool bCriticalHit);
 protected:
 	virtual void BeginPlay() override;
 	virtual void SetupInputComponent() override;
@@ -72,4 +76,7 @@ private:
 	void CursorTrace();
 
 	void AutoRun();
+
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<UDamageTextWidgetComponent> DamageTextComponentClass;
 };

@@ -5,10 +5,12 @@
 #include "Aura/AuraGameplayTags.h"
 #include "Aura/Interact/EnemyInterface.h"
 #include "Aura/Input/AuraInputComponent.h"
+#include "Aura/UI/Widgets/DamageTextWidgetComponent.h"
 #include "Aura/AbilitySystem/AuraAbilitySystemComponent.h"
 
 #include "AbilitySystemBlueprintLibrary.h"
 
+#include "GameFramework/Character.h"
 #include "Components/SplineComponent.h"
 #include "NavigationPath.h"
 #include "NavigationSystem.h"
@@ -50,6 +52,18 @@ void AAuraPlayerController::PlayerTick(float DeltaTime)
 	AutoRun();
 }
 
+void AAuraPlayerController::ShowDamageNumber_Implementation(float DamageAmount, ACharacter* TargetCharacter, bool bBlockedHit, bool bCriticalHit)
+{
+	if (IsValid(TargetCharacter) && DamageTextComponentClass)
+	{
+		UDamageTextWidgetComponent* DamageText = NewObject<UDamageTextWidgetComponent>(TargetCharacter, DamageTextComponentClass);
+		DamageText->RegisterComponent();
+		DamageText->AttachToComponent(TargetCharacter->GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform);
+		DamageText->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
+		DamageText->SetDamageText(DamageAmount, bBlockedHit, bCriticalHit);
+	}
+}
+
 void AAuraPlayerController::SetupInputComponent()
 {
 	Super::SetupInputComponent();
@@ -58,7 +72,7 @@ void AAuraPlayerController::SetupInputComponent()
 	AuraInputComponent->BindAction(moveAction, ETriggerEvent::Triggered, this, &AAuraPlayerController::Move);
 	AuraInputComponent->BindAction(ShiftAction, ETriggerEvent::Started, this, &AAuraPlayerController::ShiftPressed);
 	AuraInputComponent->BindAction(ShiftAction, ETriggerEvent::Completed, this, &AAuraPlayerController::ShiftReleased);
-
+	
 	AuraInputComponent->BindAbilityActions(InputConfig, this, &ThisClass::AbilityInputTagPressed, &ThisClass::AbilityInputTagReleased, &ThisClass::AbilityInputTagHeld);
 }
 

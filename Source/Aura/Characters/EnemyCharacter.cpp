@@ -1,12 +1,15 @@
 #include "EnemyCharacter.h"
 
 #include "Aura/Aura.h"
-
+#include "Aura/AuraGameplayTags.h"
 #include "Aura/UI/Widgets/AuraUserWidget.h"
 #include "Aura/AbilitySystem/AuraAttributeSet.h"
+#include "Aura/AbilitySystem/AuraAbilitySystemLibrary.h"
 #include "Aura/AbilitySystem/AuraAbilitySystemComponent.h"
 
 #include "Components/WidgetComponent.h"
+
+#include "GameFramework/CharacterMovementComponent.h"
 
 AEnemyCharacter::AEnemyCharacter()
 {
@@ -28,8 +31,12 @@ AEnemyCharacter::AEnemyCharacter()
 void AEnemyCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+	
+	GetCharacterMovement()->MaxWalkSpeed = BaseWalkSpeed;
 
 	InitAbilityActorInfo();
+
+	UAuraAbilitySystemLibrary::GiveStartupAbilities(this, abilitySystemComponent);
 
 	if (UAuraUserWidget* AuraUserWidget = Cast<UAuraUserWidget>(HealthBar->GetUserWidgetObject()))
 	{
@@ -52,6 +59,11 @@ void AEnemyCharacter::BeginPlay()
 			}
 		);
 
+		abilitySystemComponent->RegisterGameplayTagEvent(FAuraGameplayTags::Get().Effects_HitReact, EGameplayTagEventType::NewOrRemoved).AddUObject(
+			this,
+			&AEnemyCharacter::HitReactTagChanged
+		);
+
 		// Initial Value for health and maxhealth
 		OnHealthChanged.Broadcast(AuraAS->GetHealth());
 		OnMaxHealthChanged.Broadcast(AuraAS->GetMaxHealth());
@@ -64,12 +76,8 @@ void AEnemyCharacter::InitAbilityActorInfo()
 	// NOTED: Bind delegate function when gameplay effect apllied.
 	Cast<UAuraAbilitySystemComponent>(abilitySystemComponent)->AbilityActorInfoSet();
 
-	// Init Primary attributes
-	ApplyEffectToSelf(DefaultPrimaryAttributes, 1.0f);
-	// Init Secondary attributes
-	ApplyEffectToSelf(DefaultSecondaryAttributes, 1.0f);
-	// Init Vital attributes
-	ApplyEffectToSelf(DefaultVitalAttributes, 1.0f);
+	// Init Attributes base on ECharacterClass
+	UAuraAbilitySystemLibrary::InitializeDefaultAttributes(this, CharacterClass, Level, abilitySystemComponent);
 }
 
 void AEnemyCharacter::HighlightActor()
@@ -87,4 +95,16 @@ void AEnemyCharacter::UnHighlightActor()
 int32 AEnemyCharacter::GetPlayerLevel()
 {
 	return Level;
+}
+
+void AEnemyCharacter::Die()
+{
+	SetLifeSpan(LifeSpan);
+	Super::Die();
+}
+
+void AEnemyCharacter::HitReactTagChanged(const FGameplayTag CallbackTag, int32 NewCount)
+{
+	bHitReacting = NewCount > 0;
+	GetCharacterMovement()->MaxWalkSpeed = bHitReacting ? 0.f : BaseWalkSpeed;
 }

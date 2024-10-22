@@ -65,6 +65,7 @@ void APlayerCharacter::InitAbilityActorInfo()
 		}
 	}
 
+	// Later when the game expands to have more player character classes, we will have to implement default attributes like enemy.
 	// Init Primary attributes
 	ApplyEffectToSelf(DefaultPrimaryAttributes, 1.0f);
 	// Init Secondary attributes

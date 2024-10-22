@@ -20,6 +20,35 @@ ACharacterBase::ACharacterBase()
 	weapon->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }
 
+UAnimMontage* ACharacterBase::GetHitReactMontage_Implementation()
+{
+	return HitReactMontage;
+}
+
+void ACharacterBase::Die()
+{
+	// Detach weapon on hand.
+	weapon->DetachFromComponent(FDetachmentTransformRules(EDetachmentRule::KeepWorld, true));
+	MulticastHandleDeath();
+}
+
+void ACharacterBase::MulticastHandleDeath_Implementation()
+{
+	// Create ragdoll basic for weapon and mesh.
+	weapon->SetSimulatePhysics(true);
+	weapon->SetEnableGravity(true);
+	weapon->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
+
+	GetMesh()->SetSimulatePhysics(true);
+	GetMesh()->SetEnableGravity(true);
+	GetMesh()->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
+	GetMesh()->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Block);
+
+	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	Dissolve();
+}
+
 void ACharacterBase::BeginPlay()
 {
 	Super::BeginPlay();
@@ -57,4 +86,20 @@ void ACharacterBase::AddCharacterAbilities()
 	if (!HasAuthority()) return;
 
 	AuraASC->AddCharacterAbilities(StartupAbilities);
+}
+
+void ACharacterBase::Dissolve()
+{
+	if (IsValid(DissolveMaterialInstance))
+	{
+		UMaterialInstanceDynamic* DynamicMatInst = UMaterialInstanceDynamic::Create(DissolveMaterialInstance, this);
+		GetMesh()->SetMaterial(0, DynamicMatInst);
+		StartDissolveTimeline(DynamicMatInst);
+	}
+	if (IsValid(WeaponDissolveMaterialInstance))
+	{
+		UMaterialInstanceDynamic* DynamicMatInst = UMaterialInstanceDynamic::Create(WeaponDissolveMaterialInstance, this);
+		weapon->SetMaterial(0, DynamicMatInst);
+		StartWeaponDissolveTimeline(DynamicMatInst);
+	}
 }
